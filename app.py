@@ -59,7 +59,7 @@ async def run_assistant(request: Request):
             @override
             def on_tool_call_created(self, tool_call):
                 if tool_call.type == 'code_interpreter':
-                    self.queue.put('<i>Launching Code Interpreter...</i>\n ``` ')
+                    self.queue.put('<i>Launching Code Interpreter...</i><br><pre><code> ')
 
             @override
             def on_tool_call_delta(self, delta, snapshot) -> None:
@@ -68,10 +68,12 @@ async def run_assistant(request: Request):
                         self.queue.put(delta.code_interpreter.input)
 
                     if delta.code_interpreter.outputs:
-                        self.queue.put('\n ``` \n')
+                        self.queue.put('\n </code></pre><br>')
                         for output in delta.code_interpreter.outputs:
                             if output.type == "logs":
                                 self.queue.put(f"\n{output.logs}\n")
+
+            
 
             @override
             def on_message_created(self, message) -> None:
@@ -126,11 +128,12 @@ async def run_assistant(request: Request):
             if item is None:
                 break
             # Replace newline characters with <br> tags
-            item_with_line_breaks = item.replace('\n', '<br>')
+            # item_with_line_breaks = item.replace('\n', '<br>')
             item_with_line_breaks = item
             # Encode the item as JSON
-            json_data = json.dumps({'content': item_with_line_breaks})
-            yield f"data: {json_data}\n\n"
+            # json_data = json.dumps({'Text': item_with_line_breaks})
+            # yield str(json_data) + '\n'
+            yield item_with_line_breaks
 
         sdk_thread.join()
 
