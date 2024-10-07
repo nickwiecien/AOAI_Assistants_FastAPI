@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import StreamingResponse
 import time
 from dotenv import load_dotenv
@@ -8,6 +8,7 @@ from pydantic import BaseModel
 import threading
 import queue
 import json
+import tempfile
 
 app = FastAPI()
 
@@ -33,6 +34,54 @@ assistant = client.beta.assistants.retrieve(
 def create_thread():
     thread = client.beta.threads.create()
     return thread.id
+
+class FileUploadRequest(BaseModel):
+    file_name: str
+    file_data: str  # This will hold the base64-encoded file data
+    thread_id: str
+
+@app.post("/upload_file_and_create_thread/")
+async def upload_file_and_create_thread(request: Request):
+    try:
+        body = await request.json()
+        file_name = body.get("file_name")
+        file_data = body.get("file_data")
+        file_bytes = base64.b64decode(file_data)
+
+        thread = None
+        file = None
+
+        # Use a temporary directory
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_file_path = os.path.join(temp_dir, file_name)
+
+            # Save the file in the temp directory
+            with open(temp_file_path, "wb") as temp_file:
+                temp_file.write(file_bytes)
+
+            # Open the file using a with statement to ensure it closes properly
+            with open(temp_file_path, 'rb') as f:
+                file = client.files.create(
+                    file=f,
+                    purpose='assistants'
+                )
+
+            # No need to manually delete the temp file; it will be deleted automatically
+
+            thread = client.beta.threads.create(
+                messages=[
+                    {
+                        "role": "user",
+                        "content": f"Uploaded file: {file_name}",
+                        "file_ids": [file.id]
+                    }
+                ]
+            )
+
+        return thread.id
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to upload file: {str(e)}")
 
 @app.post("/run_assistant")
 async def run_assistant(request: Request):
