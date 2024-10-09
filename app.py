@@ -97,7 +97,6 @@ async def run_assistant(request: Request):
                 super().__init__()  # Call the parent constructor
                 self.queue = q
                 self.client = client
-                self.count = 0
                 self.status = ''
                 self.tool_call_active = False
 
@@ -109,26 +108,16 @@ async def run_assistant(request: Request):
             @override
             def on_tool_call_created(self, tool_call):
                 if self.status!= 'toolcall_created':
-                    print('toolcall_created ' + str(self.count))
-                    print(tool_call)
-                    print()
                     self.status = 'toolcall_created'
                     self.tool_call_active = True
-                self.count+=1
                 if tool_call.type == 'code_interpreter':
                     self.queue.put('<i>Launching Code Interpreter...</i>\n')
                     self.queue.put("<pre><code>")
 
-
-
             @override
             def on_tool_call_delta(self, delta, snapshot) -> None:
                 if self.status!= 'toolcall_delta':
-                    print('toolcall_delta ' + str(self.count))
-                    print(delta)
-                    print()
                     self.status = 'toolcall_delta'
-                self.count+=1
                 if delta.type == 'code_interpreter':
                     if self.tool_call_active==False:
                         self.queue.put('<pre><code>')
@@ -140,17 +129,11 @@ async def run_assistant(request: Request):
                         for output in delta.code_interpreter.outputs:
                             if output.type == "logs":
                                 self.queue.put(f"\n{output.logs}\n")
-                        
-                            
 
             @override
             def on_tool_call_done(self, tool_call) -> None:
                 if self.status!= 'toolcall_done':
-                    print('toolcall_done ' + str(self.count))
-                    print(tool_call)
-                    print()
                     self.status = 'toolcall_done'
-                self.count+=1
                 if tool_call.type == 'code_interpreter':
                     self.queue.put('</code></pre>')
                     self.queue.put('\n')
@@ -161,21 +144,13 @@ async def run_assistant(request: Request):
             @override
             def on_message_created(self, message) -> None:
                 if self.status!= 'message_created':
-                    print('message_created ' + str(self.count))
-                    print(message)
-                    print()
                     self.status = 'message_created'
-                self.count+=1
                 pass
 
             @override
             def on_message_delta(self, delta, snapshot) -> None:
                 if self.status!= 'message_delta':
-                    print('message_delta ' + str(self.count))
-                    print(delta)
-                    print()
                     self.status = 'message_delta'
-                self.count+=1
                 for content in delta.content:
                     if content.type == 'image_file':
                         img_bytes = self.client.files.content(content.image_file.file_id).read()
@@ -191,11 +166,7 @@ async def run_assistant(request: Request):
             @override
             def on_message_done(self, message) -> None:
                 if self.status!= 'message_done':
-                    print('message_done ' + str(self.count))
-                    print(message)
-                    print()
                     self.status = 'message_done'
-                self.count+=1
                 self.queue.put('\n')
                 pass
 
