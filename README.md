@@ -88,21 +88,25 @@ Streams the assistant's responses as plain text.
 
 4. **Create a `.env` file and add your Azure OpenAI credentials:**
         ```sh
+
         AOAI_ENDPOINT=your_azure_openai_endpoint
+
         AOAI_KEY=your_azure_openai_api_key
+
         AOAI_ASSISTANT_ID=your_azure_openai_assistant_id
+
         AZURE_OPENAI_API_VERSION=2024-02-15-preview  # Optional, default is "2024-02-15-preview"
         ```
 
-5. **Create your Azure OpenAI Assistant:**
+1. **Create your Azure OpenAI Assistant:**
         Run the `setup_create_assistant.ipynb` notebook to create your assistant in AOAI. Copy the assistant ID to the `.env` file.    
 
-6. **Run the application:**
+2. **Run the application:**
         ```sh
         uvicorn main:app --reload
         ```
 
-7. **Access the API documentation:**
+3. **Access the API documentation:**
         Open your browser and go to [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) to see the interactive API documentation provided by Swagger UI.
 
 ## Contributing
